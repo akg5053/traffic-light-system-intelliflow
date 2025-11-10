@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🚦 IntelliFlow - Smart Traffic Analytics</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      background: #111;
+      color: #f8f9fa;
+      font-family: 'Poppins', sans-serif;
+    }
+    .lane-card {
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+      transition: 0.3s;
+    }
+    .lane-active {
+      background: rgba(0, 255, 100, 0.25);
+      border: 2px solid #00ff88;
+      box-shadow: 0 0 10px #00ff88;
+    }
+    .lane-inactive {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid #666;
+    }
+    #progressBar {
+      height: 15px;
+      background: linear-gradient(90deg, #00ff88, #ffcc00);
+      border-radius: 10px;
+      transition: width 1s linear;
+    }
+    canvas {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container py-4">
+    <h2 class="text-center mb-4">
+      🚦 IntelliFlow - Smart Traffic Analytics
+    </h2>
+
+    <!-- Countdown Progress -->
+    <div class="progress mb-4" style="height: 15px;">
+      <div id="progressBar" class="progress-bar"></div>
+    </div>
+
+    <!-- Lane Cards -->
+    <div class="row text-center mb-4" id="laneContainer">
+      <div class="col-md-6">
+        <div id="lane1" class="lane-card lane-inactive">
+          <h5>Lane 1 – Top</h5>
+          <p id="lane1Count">Vehicles: 0</p>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div id="lane2" class="lane-card lane-inactive">
+          <h5>Lane 2 – Right</h5>
+          <p id="lane2Count">Vehicles: 0</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row">
+      <div class="col-md-6">
+        <canvas id="vehicleChart" height="150"></canvas>
+      </div>
+      <div class="col-md-6">
+        <canvas id="efficiencyChart" height="150"></canvas>
+      </div>
+    </div>
+
+    <hr class="text-secondary mt-4">
+    <p class="text-center small">
+      ⏱️ Last Updated: <span id="lastUpdated">--:--:--</span> |
+      📊 Auto-refresh every 5s |
+      Made by <b>Anand K.R. Gupta</b> 💡
+    </p>
+  </div>
+
+  <script>
+    const vehicleChart = new Chart(document.getElementById('vehicleChart'), {
+      type: 'bar',
+      data: { labels: [], datasets: [{ label: 'Total Vehicles', data: [], backgroundColor: '#00FFAA' }] },
+      options: { scales: { y: { beginAtZero: true } } }
+    });
+
+    const efficiencyChart = new Chart(document.getElementById('efficiencyChart'), {
+      type: 'line',
+      data: { labels: [], datasets: [{ label: 'Efficiency (%)', data: [], borderColor: '#FFD700', fill: false }] },
+      options: { scales: { y: { beginAtZero: true, max: 100 } } }
+    });
+
+    async function updateDashboard() {
+      const res = await fetch('/data');
+      const data = await res.json();
+
+      const logs = data.logs;
+      if (!logs.length) return;
+
+      const timestamps = logs.map(d => new Date(d.timestamp).toLocaleTimeString());
+      const vehicles = logs.map(d => d.total_vehicles);
+      const efficiency = logs.map(d => d.efficiency_improvement);
+
+      vehicleChart.data.labels = timestamps;
+      vehicleChart.data.datasets[0].data = vehicles;
+      vehicleChart.update();
+
+      efficiencyChart.data.labels = timestamps;
+      efficiencyChart.data.datasets[0].data = efficiency;
+      efficiencyChart.update();
+
+      // Lane cards
+      const latest = logs[logs.length - 1];
+      document.getElementById("lane1Count").innerText = `Vehicles: ${latest.vehicle_counts?.Lane1_Top || 0}`;
+      document.getElementById("lane2Count").innerText = `Vehicles: ${latest.vehicle_counts?.Lane2_Right || 0}`;
+
+      const active = data.active_lane;
+      document.getElementById("lane1").className = active === "Lane1_Top" ? "lane-card lane-active" : "lane-card lane-inactive";
+      document.getElementById("lane2").className = active === "Lane2_Right" ? "lane-card lane-active" : "lane-card lane-inactive";
+
+      // Progress bar
+      const percent = ((data.cycle_time - data.remaining_time) / data.cycle_time) * 100;
+      document.getElementById("progressBar").style.width = percent + "%";
+
+      // Update time
+      document.getElementById("lastUpdated").innerText = data.last_updated;
+    }
+
+    setInterval(updateDashboard, 5000);
+    updateDashboard();
+  </script>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script>
+  const socket = io();
+
+  socket.on("update", (data) => {
+    console.log("🔄 Live update received", data);
+
+    const logs = data.logs;
+    const timestamps = logs.map(d => new Date(d.timestamp).toLocaleTimeString());
+    const vehicles = logs.map(d => d.total_vehicles);
+    const efficiency = logs.map(d => d.efficiency_improvement);
+
+    vehicleChart.data.labels = timestamps;
+    vehicleChart.data.datasets[0].data = vehicles;
+    vehicleChart.update();
+
+    efficiencyChart.data.labels = timestamps;
+    efficiencyChart.data.datasets[0].data = efficiency;
+    efficiencyChart.update();
+
+    const latest = data.latest;
+    document.getElementById("lane1Count").innerText = `Vehicles: ${latest.vehicle_counts?.Lane1_Top || 0}`;
+    document.getElementById("lane2Count").innerText = `Vehicles: ${latest.vehicle_counts?.Lane2_Right || 0}`;
+    document.getElementById("lastUpdated").innerText = data.time;
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@radix-ui/react-toast": "^1.2.15",
+    "@radix-ui/react-tooltip": "^1.2.8"
+  }
+}
