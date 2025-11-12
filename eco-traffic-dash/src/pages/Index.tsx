@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,9 +8,14 @@ import io from "socket.io-client";
 
 const API_URL = "http://127.0.0.1:5000";
 
+type LaneName = "North" | "South" | "East" | "West";
+
 interface VehicleCounts {
   North: number;
+  South: number;
   East: number;
+  West: number;
+  [key: string]: number;
 }
 
 interface SignalTimings {
@@ -18,23 +23,190 @@ interface SignalTimings {
   EastWest: number;
 }
 
+interface RemainingTimes {
+  [lane: string]: number;
+}
+
+interface LaneGroups {
+  [group: string]: string[];
+}
+
 interface TrafficData {
   vehicle_counts: VehicleCounts;
+  group_counts: { [key: string]: number };
   signal_timings: SignalTimings;
   total_vehicles: number;
   efficiency_improvement: number;
   current_phase: string;
   active_lane: string;
+  active_group: string;
   last_updated: string;
+  remaining_times: RemainingTimes;
+  lanes_available: string[];
+  lane_groups: LaneGroups;
+  system_mode: string;
 }
+
+interface TrafficLog {
+  timestamp?: string;
+  vehicle_counts?: Record<string, number>;
+  group_counts?: Record<string, number>;
+  signal_timings?: Record<string, number>;
+  current_phase?: string;
+  total_vehicles?: number;
+  efficiency_improvement?: number;
+}
+
+interface ApiResponse extends TrafficData {
+  logs?: TrafficLog[];
+  latest?: TrafficLog;
+}
+
+interface StatsSummary {
+  total_vehicles: number;
+  avg_efficiency: number;
+  total_cycles: number;
+}
+
+interface FramesResponse {
+  frames?: Record<string, string | null>;
+  counts?: Record<string, number>;
+  lanes?: string[];
+}
+
+const DEFAULT_LANE_GROUPS: LaneGroups = {
+  NorthSouth: ["North", "South"],
+  EastWest: ["East", "West"],
+};
+
+const DEFAULT_COUNTS: VehicleCounts = {
+  North: 0,
+  South: 0,
+  East: 0,
+  West: 0,
+};
+
+const DEFAULT_REMAINING: RemainingTimes = {
+  North: 0,
+  South: 0,
+  East: 0,
+  West: 0,
+};
+
+const normalizeTrafficData = (payload: Partial<ApiResponse>): TrafficData => {
+  const vehicleCounts: VehicleCounts = {
+    ...DEFAULT_COUNTS,
+    ...(payload.vehicle_counts || {}),
+  };
+  const remainingTimes: RemainingTimes = {
+    ...DEFAULT_REMAINING,
+    ...(payload.remaining_times || {}),
+  };
+  const laneGroups = payload.lane_groups || DEFAULT_LANE_GROUPS;
+  const groupCounts = payload.group_counts || {
+    NorthSouth: laneGroups.NorthSouth?.reduce((sum, lane) => sum + (vehicleCounts[lane] || 0), 0) ?? 0,
+    EastWest: laneGroups.EastWest?.reduce((sum, lane) => sum + (vehicleCounts[lane] || 0), 0) ?? 0,
+  };
+
+  return {
+    vehicle_counts: vehicleCounts,
+    group_counts: groupCounts,
+    signal_timings: {
+      NorthSouth: payload.signal_timings?.NorthSouth ?? 5,
+      EastWest: payload.signal_timings?.EastWest ?? 5,
+    },
+    total_vehicles:
+      payload.total_vehicles ??
+      Object.values(vehicleCounts).reduce((sum, count) => sum + count, 0),
+    efficiency_improvement: payload.efficiency_improvement ?? 0,
+    current_phase: payload.current_phase ?? "NorthSouth_Green",
+    active_lane: payload.active_lane ?? "North",
+    active_group:
+      payload.active_group ??
+      ((payload.current_phase || "").includes("EastWest") ? "EastWest" : "NorthSouth"),
+    last_updated: payload.last_updated ?? new Date().toLocaleTimeString(),
+    remaining_times: Object.keys(remainingTimes).reduce((acc, lane) => {
+      acc[lane] = Math.max(0, Math.round(remainingTimes[lane] ?? 0));
+      return acc;
+    }, {} as RemainingTimes),
+    lanes_available: payload.lanes_available?.length
+      ? payload.lanes_available
+      : ["North", "East"],
+    lane_groups: laneGroups,
+    system_mode: payload.system_mode ?? "TWO_VIDEO",
+  };
+};
 
 export default function Index() {
   const [data, setData] = useState<TrafficData | null>(null);
-  const [logs, setLogs] = useState<any[]>([]);
-  const [stats, setStats] = useState({ total_vehicles: 0, avg_efficiency: 0, total_cycles: 0 });
-  const [northVideoFrame, setNorthVideoFrame] = useState<string | null>(null);
-  const [eastVideoFrame, setEastVideoFrame] = useState<string | null>(null);
-  const [remainingTime, setRemainingTime] = useState({ North: 0, South: 0, East: 0, West: 0 });
+  const [logs, setLogs] = useState<TrafficLog[]>([]);
+  const [stats, setStats] = useState<StatsSummary>({ total_vehicles: 0, avg_efficiency: 0, total_cycles: 0 });
+  const [videoFrames, setVideoFrames] = useState<Record<string, string | null>>({});
+  const [remainingTime, setRemainingTime] = useState<RemainingTimes>(DEFAULT_REMAINING);
+
+  const laneOrder: LaneName[] = ["North", "South", "East", "West"];
+  const vehicleCounts = data?.vehicle_counts ?? DEFAULT_COUNTS;
+  const laneGroups = data?.lane_groups ?? DEFAULT_LANE_GROUPS;
+  const lanesAvailable = data?.lanes_available?.length ? data.lanes_available : ["North", "East"];
+  const groupCounts = data?.group_counts ?? {
+    NorthSouth: laneGroups.NorthSouth.reduce((sum, lane) => sum + (vehicleCounts[lane] || 0), 0),
+    EastWest: laneGroups.EastWest.reduce((sum, lane) => sum + (vehicleCounts[lane] || 0), 0),
+  };
+  const northGroupCount = groupCounts.NorthSouth ?? 0;
+  const eastGroupCount = groupCounts.EastWest ?? 0;
+  const activeGroup = data?.active_group ?? "NorthSouth";
+
+  const laneCards = laneOrder.map((lane) => {
+    const group = Object.entries(laneGroups).find(([, lanes]) => lanes.includes(lane))?.[0];
+    const isAvailable = lanesAvailable.includes(lane);
+    return {
+      lane,
+      name: `${lane} Lane`,
+      count: vehicleCounts[lane] || 0,
+      highlight: group === activeGroup,
+      available: isAvailable,
+      group,
+    };
+  });
+
+  const fetchData = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/data`);
+      const json = (await response.json()) as ApiResponse;
+      const normalized = normalizeTrafficData(json);
+      setData(normalized);
+      setRemainingTime(normalized.remaining_times);
+      setLogs(json.logs ?? []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  }, []);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/stats`);
+      const json = (await response.json()) as StatsSummary;
+      setStats(json);
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  }, []);
+
+  const fetchVideoFrames = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/video/frames`);
+      const json = (await response.json()) as FramesResponse;
+      if (json.frames) {
+        const framed: Record<string, string | null> = {};
+        Object.entries(json.frames).forEach(([lane, value]) => {
+          framed[lane] = value ? `data:image/jpeg;base64,${value}` : null;
+        });
+        setVideoFrames(framed);
+      }
+    } catch (error) {
+      console.error("Error fetching video frames:", error);
+    }
+  }, []);
 
   useEffect(() => {
     // Fetch initial data
@@ -48,32 +220,12 @@ export default function Index() {
       console.log("Connected to IntelliFlow server");
     });
 
-    socket.on("update", (updateData: any) => {
+    socket.on("update", (updateData: ApiResponse) => {
       console.log("Received update:", updateData);
-      if (updateData.latest) {
-        const newData = {
-          vehicle_counts: updateData.latest.vehicle_counts || { North: 0, East: 0 },
-          signal_timings: updateData.signal_timings || updateData.latest.signal_timings || { NorthSouth: 5, EastWest: 5 },
-          total_vehicles: updateData.latest.total_vehicles || 0,
-          efficiency_improvement: updateData.latest.efficiency_improvement || 0,
-          current_phase: updateData.current_phase || updateData.latest.current_phase || "NorthSouth_Green",
-          active_lane: updateData.active_lane || "North",
-          last_updated: updateData.time || new Date().toLocaleTimeString(),
-        };
-        setData(newData);
-        // Update remaining times from WebSocket data if available
-        if (updateData.remaining_times) {
-          setRemainingTime({
-            North: Math.max(0, Math.round(updateData.remaining_times.North || 0)),
-            South: Math.max(0, Math.round(updateData.remaining_times.South || 0)),
-            East: Math.max(0, Math.round(updateData.remaining_times.East || 0)),
-            West: Math.max(0, Math.round(updateData.remaining_times.West || 0))
-          });
-        }
-      }
-      if (updateData.logs) {
-        setLogs(updateData.logs);
-      }
+      const normalized = normalizeTrafficData(updateData);
+      setData(normalized);
+      setRemainingTime(normalized.remaining_times);
+      setLogs(updateData.logs ?? []);
     });
 
     // Poll every 500ms for data updates (faster for real-time traffic lights)
@@ -98,86 +250,48 @@ export default function Index() {
       clearInterval(interval);
       if (videoInterval) clearInterval(videoInterval);
     };
-  }, [data]);
+  }, [fetchData, fetchStats, fetchVideoFrames]);
 
-  const fetchData = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/data`);
-      const json = await response.json();
-      setData(json);
-      if (json.logs) {
-        setLogs(json.logs);
-      }
-      // Update remaining times directly from API response
-      if (json.remaining_times) {
-        setRemainingTime({
-          North: Math.max(0, Math.round(json.remaining_times.North || 0)),
-          South: Math.max(0, Math.round(json.remaining_times.South || 0)),
-          East: Math.max(0, Math.round(json.remaining_times.East || 0)),
-          West: Math.max(0, Math.round(json.remaining_times.West || 0))
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/stats`);
-      const json = await response.json();
-      setStats(json);
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-    }
-  };
-
-  const fetchVideoFrames = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/video/frames`);
-      const json = await response.json();
-      if (json.north) {
-        setNorthVideoFrame(`data:image/jpeg;base64,${json.north}`);
-      }
-      if (json.east) {
-        setEastVideoFrame(`data:image/jpeg;base64,${json.east}`);
-      }
-    } catch (error) {
-      console.error("Error fetching video frames:", error);
-    }
-  };
-
-  const getLightStatus = (lane: string) => {
+  const getLightStatus = (lane: LaneName) => {
     if (!data) return { color: "red", time: 0 };
     const phase = data.current_phase || "All_Red";
-    
-    // Use remaining times directly from API (updated every 500ms)
-    if (lane === "North" || lane === "South") {
-      if (phase.includes("NorthSouth_Green")) {
-        return { color: "green", time: Math.max(0, Math.round(remainingTime.North)) };
-      } else if (phase.includes("NorthSouth_Yellow")) {
-        return { color: "yellow", time: Math.max(0, Math.round(remainingTime.North)) };
-      } else {
-        return { color: "red", time: 0 };
-      }
-    } else if (lane === "East" || lane === "West") {
-      if (phase.includes("EastWest_Green")) {
-        return { color: "green", time: Math.max(0, Math.round(remainingTime.East)) };
-      } else if (phase.includes("EastWest_Yellow")) {
-        return { color: "yellow", time: Math.max(0, Math.round(remainingTime.East)) };
-      } else {
-        return { color: "red", time: 0 };
-      }
+    const laneGroups = data.lane_groups || DEFAULT_LANE_GROUPS;
+    const groupEntry = Object.entries(laneGroups).find(([, lanes]) => lanes.includes(lane));
+    const laneRemaining = Math.max(0, Math.round(remainingTime[lane] ?? 0));
+
+    if (!groupEntry) {
+      return { color: "red", time: laneRemaining };
     }
+
+    const [groupName] = groupEntry;
+
+    if (phase.includes("All_Red")) {
+      return { color: "red", time: laneRemaining };
+    }
+
+    if (phase.includes(groupName) && phase.includes("Green")) {
+      return { color: "green", time: laneRemaining };
+    }
+
+    if (phase.includes(groupName) && phase.includes("Yellow")) {
+      return { color: "yellow", time: laneRemaining };
+    }
+
     return { color: "red", time: 0 };
   };
 
   // Prepare chart data
-  const vehicleChartData = logs.slice(-10).map((log) => ({
-    time: new Date(log.timestamp).toLocaleTimeString(),
-    North: log.vehicle_counts?.North || 0,
-    East: log.vehicle_counts?.East || 0,
-  }));
+  const vehicleChartData = logs.slice(-10).map((log) => {
+    const vc = log.vehicle_counts || {};
+    const gc = log.group_counts || {};
+    const northSouth = gc.NorthSouth ?? ((vc.North || 0) + (vc.South || 0));
+    const eastWest = gc.EastWest ?? ((vc.East || 0) + (vc.West || 0));
+    return {
+      time: new Date(log.timestamp).toLocaleTimeString(),
+      NorthSouth: northSouth,
+      EastWest: eastWest,
+    };
+  });
 
   const efficiencyChartData = logs.slice(-10).map((log) => ({
     time: new Date(log.timestamp).toLocaleTimeString(),
@@ -185,10 +299,6 @@ export default function Index() {
   }));
 
   // Get real vehicle counts from API (South and West are always 0)
-  const northCount = data?.vehicle_counts?.North || 0;
-  const southCount = 0;  // South count is always 0
-  const eastCount = data?.vehicle_counts?.East || 0;
-  const westCount = 0;    // West count is always 0
 
   // Calculate priority score and queue reduction
   const priorityScore = data ? Math.min(10, (data.total_vehicles / 10) + 5).toFixed(1) : "0.0";
@@ -252,12 +362,7 @@ export default function Index() {
             Live Vehicle Count
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[
-              { name: "North Lane", count: northCount, color: "blue", highlight: false },
-              { name: "South Lane", count: southCount, color: "blue", highlight: false },
-              { name: "East Lane", count: eastCount, color: "yellow", highlight: data?.active_lane === "East" || eastCount > northCount },
-              { name: "West Lane", count: westCount, color: "blue", highlight: false }
-            ].map((lane, index) => (
+            {laneCards.map((lane, index) => (
               <motion.div
                 key={lane.name}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -265,7 +370,11 @@ export default function Index() {
                 transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
                 whileHover={{ scale: 1.05, y: -5 }}
               >
-                <Card className={`bg-white border-2 ${lane.highlight ? "border-red-500 shadow-lg" : "border-gray-200"} shadow-md transition-all duration-300`}>
+                <Card
+                  className={`bg-white border-2 ${
+                    lane.highlight ? "border-red-500 shadow-lg" : "border-gray-200"
+                  } ${lane.available ? "" : "opacity-50"} shadow-md transition-all duration-300`}
+                >
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center">
@@ -279,8 +388,8 @@ export default function Index() {
                         <div>
                           <p className="font-semibold text-gray-800">{lane.name}</p>
                           <motion.p 
-                            key={lane.count}
-                            initial={{ scale: 1.2, color: "#10b981" }}
+                            key={`${lane.name}-${lane.count}`}
+                            initial={{ scale: 1.2, color: lane.highlight ? "#ef4444" : "#10b981" }}
                             animate={{ scale: 1, color: "#111827" }}
                             transition={{ duration: 0.3 }}
                             className="text-2xl font-bold text-gray-900"
@@ -293,7 +402,11 @@ export default function Index() {
                     <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                       <motion.div 
                         className={`h-3 rounded-full ${
-                          lane.color === "yellow" ? "bg-yellow-500" : "bg-blue-500"
+                          lane.highlight
+                            ? "bg-red-500"
+                            : lane.group === "EastWest"
+                            ? "bg-yellow-500"
+                            : "bg-blue-500"
                         }`}
                         initial={{ width: 0 }}
                         animate={{ width: `${Math.min(100, (lane.count / 50) * 100)}%` }}
@@ -323,8 +436,10 @@ export default function Index() {
             Traffic Light Status
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {["North", "South", "East", "West"].map((lane, index) => {
+            {laneOrder.map((lane, index) => {
               const status = getLightStatus(lane);
+              const available = lanesAvailable.includes(lane);
+
               return (
                 <motion.div
                   key={lane}
@@ -333,7 +448,11 @@ export default function Index() {
                   transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
                   whileHover={{ scale: 1.05 }}
                 >
-                  <Card className="bg-white border-gray-200 shadow-md transition-all duration-300">
+                  <Card
+                    className={`bg-white border-gray-200 shadow-md transition-all duration-300 ${
+                      available ? "" : "opacity-50"
+                    }`}
+                  >
                     <CardContent className="p-6">
                       <p className="font-semibold text-gray-800 mb-4">{lane} Signal</p>
                       <div className="flex justify-center space-x-2 mb-4">
@@ -458,13 +577,13 @@ export default function Index() {
                     >
                       <p className="text-sm text-gray-600">Vehicles</p>
                       <motion.p 
-                        key={data?.current_phase?.includes("EastWest") ? eastCount : northCount}
+                        key={data?.active_group === "EastWest" ? eastGroupCount : northGroupCount}
                         initial={{ scale: 1.2, color: "#eab308" }}
                         animate={{ scale: 1, color: "#111827" }}
                         transition={{ duration: 0.3 }}
                         className="text-xl font-bold text-gray-800"
                       >
-                        {data?.current_phase?.includes("EastWest") ? eastCount : northCount}
+                        {data?.active_group === "EastWest" ? eastGroupCount : northGroupCount}
                       </motion.p>
                     </motion.div>
                   </div>
@@ -476,7 +595,7 @@ export default function Index() {
                   transition={{ delay: 0.9 }}
                 >
                   <p className="text-gray-700">
-                    <strong>Analysis:</strong> The {data?.current_phase?.includes("EastWest") ? "east/west" : "north/south"} lanes have {data?.current_phase?.includes("EastWest") ? eastCount : northCount} vehicles, requiring {data?.current_phase?.includes("EastWest") ? `${data?.signal_timings?.EastWest || 0}s` : data?.current_phase?.includes("NorthSouth") ? `${data?.signal_timings?.NorthSouth || 0}s` : "0s"} green time. The AI adjusts timing dynamically based on real-time traffic patterns, reducing congestion by {data?.efficiency_improvement?.toFixed(0) || 0}% compared to fixed-interval signals.
+                    <strong>Analysis:</strong> The {data?.active_group === "EastWest" ? "east/west" : "north/south"} lanes have {data?.active_group === "EastWest" ? eastGroupCount : northGroupCount} vehicles, requiring {data?.active_group === "EastWest" ? `${data?.signal_timings?.EastWest || 0}s` : `${data?.signal_timings?.NorthSouth || 0}s`} green time. The AI adjusts timing dynamically based on real-time traffic patterns, reducing congestion by {data?.efficiency_improvement?.toFixed(0) || 0}% compared to fixed-interval signals.
                   </p>
                 </motion.div>
                 <div className="grid grid-cols-3 gap-4">
@@ -553,8 +672,8 @@ export default function Index() {
                       <YAxis stroke="#6b7280" />
                       <Tooltip contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb" }} />
                       <Legend />
-                      <Line type="monotone" dataKey="North" stroke="#3b82f6" strokeWidth={2} name="North" />
-                      <Line type="monotone" dataKey="East" stroke="#10b981" strokeWidth={2} name="East" />
+                      <Line type="monotone" dataKey="NorthSouth" stroke="#3b82f6" strokeWidth={2} name="North/South" />
+                      <Line type="monotone" dataKey="EastWest" stroke="#10b981" strokeWidth={2} name="East/West" />
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -626,144 +745,83 @@ export default function Index() {
             ></motion.div>
             Live Video Feeds
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 1.1 }}
-              whileHover={{ scale: 1.02 }}
-            >
-              <Card className="bg-white border-gray-200 shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-gray-800">North Lane - Live Detection</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <motion.div 
-                    className="relative bg-black rounded-lg overflow-hidden mb-4"
-                    style={{ aspectRatio: "16/9" }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <AnimatePresence mode="wait">
-                      {northVideoFrame ? (
-                        <motion.img 
-                          key="north-video"
-                          src={northVideoFrame}
-                          alt="North Lane Video"
-                          className="w-full h-full object-contain"
-                          style={{ imageRendering: "auto" }}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.3 }}
-                        />
-                      ) : (
-                        <motion.div 
-                          key="north-loading"
-                          className="w-full h-full flex items-center justify-center"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                        >
-                          <motion.p 
-                            animate={{ opacity: [0.5, 1, 0.5] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                            className="text-white"
-                          >
-                            Loading North Lane video...
-                          </motion.p>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                    <motion.div 
-                      className="absolute top-2 left-2 bg-green-600 bg-opacity-90 px-3 py-1 rounded"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 1.3, type: "spring" }}
-                    >
-                      <motion.span 
-                        key={northCount}
-                        initial={{ scale: 1.2 }}
-                        animate={{ scale: 1 }}
-                        className="text-white font-bold text-lg"
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {lanesAvailable.map((lane, index) => {
+              const frameKey = lane.toLowerCase();
+              const frame = videoFrames[frameKey];
+              const count = vehicleCounts[lane] || 0;
+              return (
+                <motion.div
+                  key={`${lane}-video-card`}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 1.1 + index * 0.1 }}
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <Card className="bg-white border-gray-200 shadow-md">
+                    <CardHeader>
+                      <CardTitle className="text-gray-800">{lane} Lane - Live Detection</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <motion.div
+                        className="relative bg-black rounded-lg overflow-hidden mb-4"
+                        style={{ aspectRatio: "16/9" }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5 }}
                       >
-                        Vehicles: {northCount}
-                      </motion.span>
-                    </motion.div>
-                  </motion.div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 1.2 }}
-              whileHover={{ scale: 1.02 }}
-            >
-              <Card className="bg-white border-gray-200 shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-gray-800">East Lane - Live Detection</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <motion.div 
-                    className="relative bg-black rounded-lg overflow-hidden mb-4"
-                    style={{ aspectRatio: "16/9" }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <AnimatePresence mode="wait">
-                      {eastVideoFrame ? (
-                        <motion.img 
-                          key="east-video"
-                          src={eastVideoFrame}
-                          alt="East Lane Video"
-                          className="w-full h-full object-contain"
-                          style={{ imageRendering: "auto" }}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.3 }}
-                        />
-                      ) : (
-                        <motion.div 
-                          key="east-loading"
-                          className="w-full h-full flex items-center justify-center"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
+                        <AnimatePresence mode="wait">
+                          {frame ? (
+                            <motion.img
+                              key={`${lane}-video`}
+                              src={frame}
+                              alt={`${lane} Lane Video`}
+                              className="w-full h-full object-contain"
+                              style={{ imageRendering: "auto" }}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.3 }}
+                            />
+                          ) : (
+                            <motion.div
+                              key={`${lane}-loading`}
+                              className="w-full h-full flex items-center justify-center"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                            >
+                              <motion.p
+                                animate={{ opacity: [0.5, 1, 0.5] }}
+                                transition={{ duration: 1.5, repeat: Infinity }}
+                                className="text-white"
+                              >
+                                Loading {lane} lane video...
+                              </motion.p>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                        <motion.div
+                          className="absolute top-2 left-2 bg-green-600 bg-opacity-90 px-3 py-1 rounded"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 1.3 + index * 0.1, type: "spring" }}
                         >
-                          <motion.p 
-                            animate={{ opacity: [0.5, 1, 0.5] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                            className="text-white"
+                          <motion.span
+                            key={`${lane}-count-${count}`}
+                            initial={{ scale: 1.2 }}
+                            animate={{ scale: 1 }}
+                            className="text-white font-bold text-lg"
                           >
-                            Loading East Lane video...
-                          </motion.p>
+                            Vehicles: {count}
+                          </motion.span>
                         </motion.div>
-                      )}
-                    </AnimatePresence>
-                    <motion.div 
-                      className="absolute top-2 left-2 bg-blue-600 bg-opacity-90 px-3 py-1 rounded"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 1.4, type: "spring" }}
-                    >
-                      <motion.span 
-                        key={eastCount}
-                        initial={{ scale: 1.2 }}
-                        animate={{ scale: 1 }}
-                        className="text-white font-bold text-lg"
-                      >
-                        Vehicles: {eastCount}
-                      </motion.span>
-                    </motion.div>
-                  </motion.div>
-                </CardContent>
-              </Card>
-            </motion.div>
+                      </motion.div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
           </div>
         </motion.div>
       </div>

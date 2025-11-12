@@ -1,144 +1,97 @@
 # 📹 Video Source Configuration Guide
 
-## Three Main Options
+## Choose a Mode
 
-### Option 1: Laptop Webcam (Both Lanes)
+All lane inputs are controlled from `ml_model/config.py` using the `SYSTEM_MODE` switch. Pick the mode that matches your hardware, then populate the supporting dictionaries.
 
-Edit `ml_model/config.py`:
 ```python
-USE_WEBCAM = True
-USE_VIDEO_FILES = False
-USE_MIXED = False
-
-NORTH_WEBCAM_INDEX = 0  # Camera index for North lane (usually 0)
-EAST_WEBCAM_INDEX = 1   # Camera index for East lane (usually 1)
-# If you only have one camera, use same index for both: 0 and 0
+SYSTEM_MODE = "TWO_VIDEO"  # Options: "FOUR_VIDEO", "TWO_VIDEO", "TWO_ESP32", "TWO_IP", "TWO_MIXED", "FOUR_HYBRID"
 ```
 
-**How to find camera index:**
-- Try 0, 1, 2, etc. until you find the right cameras
-- Test with: `python -c "import cv2; cap = cv2.VideoCapture(0); print('Camera 0 works!' if cap.isOpened() else 'Camera 0 not found'); cap.release()"`
+### Source Dictionaries
 
----
-
-### Option 2: Two Video Files (Both Lanes)
-
-Edit `ml_model/config.py`:
 ```python
-USE_WEBCAM = False
-USE_VIDEO_FILES = True
-USE_MIXED = False
+VIDEO_FILES = {
+    "North": "vid1.mp4",
+    "South": "vid3.mp4",
+    "East": "vid2.mp4",
+    "West": "vid4.mp4",
+}
 
-NORTH_VIDEO_FILE = "your_video1.mp4"  # Path to North lane video
-EAST_VIDEO_FILE = "your_video2.mp4"    # Path to East lane video
+ESP32_CAMERAS = {
+    "North": {"ip": "192.168.1.100", "stream": "/stream"},
+    "South": {"ip": "192.168.1.101", "stream": "/stream"},
+    "East": {"ip": "192.168.1.102", "stream": "/stream"},
+    "West": {"ip": "192.168.1.103", "stream": "/stream"},
+}
+
+IP_WEBCAMS = {
+    "North": "http://192.168.1.50:8080/video",
+    "South": "http://192.168.1.51:8080/video",
+    "East": "http://192.168.1.52:8080/video",
+    "West": "http://192.168.1.53:8080/video",
+}
 ```
 
-**Video file paths:**
-- Put video files in `ml_model/` folder
-- Use relative paths: `"video1.mp4"`
-- Or absolute paths: `"C:/path/to/video1.mp4"`
+### Mode Reference
 
----
+| `SYSTEM_MODE` | North | South | East | West |
+|---------------|-------|-------|------|------|
+| `FOUR_VIDEO`  | `VIDEO_FILES` | `VIDEO_FILES` | `VIDEO_FILES` | `VIDEO_FILES` |
+| `TWO_VIDEO`   | `VIDEO_FILES` | _unused_ | `VIDEO_FILES` | _unused_ |
+| `TWO_ESP32`   | `ESP32_CAMERAS` | _unused_ | `ESP32_CAMERAS` | _unused_ |
+| `TWO_IP`      | `IP_WEBCAMS` | _unused_ | `IP_WEBCAMS` | _unused_ |
+| `TWO_MIXED`   | `IP_WEBCAMS` | _unused_ | `ESP32_CAMERAS` | _unused_ |
+| `FOUR_HYBRID` | `IP_WEBCAMS` | `IP_WEBCAMS` | `ESP32_CAMERAS` | `ESP32_CAMERAS` |
 
-### Option 3: Mixed Sources (IP Webcam + ESP32-CAM)
+> 💡 The React dashboard automatically renders two or four live feeds based on the selected mode.
 
-**North Lane:** IP Webcam App (Android phone)  
-**East Lane:** ESP32-CAM
+## Setup Notes
 
-Edit `ml_model/config.py`:
-```python
-USE_WEBCAM = False
-USE_VIDEO_FILES = False
-USE_MIXED = True
+### Laptop Webcams
+- Map your webcam indices into the `VIDEO_FILES` dictionary (e.g., use `0` or `1` if you are streaming locally via OpenCV).
+- Verify indices with `python -c "import cv2; cap = cv2.VideoCapture(0); print(cap.isOpened()); cap.release()"`.
 
-# North Lane: IP Webcam App
-NORTH_IP_WEBCAM_URL = "http://192.168.1.50:8080/video"  # Your phone's IP and port
+### Video Files
+- Place files inside `ml_model/` or provide absolute paths.
+- Update `VIDEO_FILES` entries accordingly.
 
-# East Lane: ESP32-CAM
-EAST_ESP32_IP = "192.168.1.101"   # ESP32-CAM IP address
-EAST_ESP32_STREAM_URL = "/stream"  # ESP32-CAM stream endpoint
-```
+### ESP32-CAM
+1. Flash the ESP32 with `ESP32_CAM_CODE.ino`.
+2. Connect to WiFi and note each IP address.
+3. Update the `ESP32_CAMERAS` dictionary with IP + stream path (default `/stream`).
 
-**Setup IP Webcam (Android):**
-1. Install "IP Webcam" app from Play Store
-2. Open app, tap "Start server"
-3. Note the IP address shown (e.g., `192.168.1.50:8080`)
-4. Use URL: `http://192.168.1.50:8080/video`
+### IP Webcam (Android)
+1. Install the *IP Webcam* app.
+2. Start the server and note the URL.
+3. Populate the `IP_WEBCAMS` dictionary with the full `http://<ip>:<port>/video` paths.
 
-**Setup ESP32-CAM:**
-1. Upload `ESP32_CAM_CODE.ino` to your ESP32-CAM
-2. Connect ESP32-CAM to WiFi
-3. Check Serial Monitor for IP address
-4. Use IP in config: `EAST_ESP32_IP = "192.168.1.101"`
+## Testing Sources
 
----
-
-## Quick Reference
-
-| Option | North Source | East Source | Config Setting |
-|--------|-------------|-------------|----------------|
-| 1 | Webcam | Webcam | `USE_WEBCAM = True` |
-| 2 | Video File | Video File | `USE_VIDEO_FILES = True` |
-| 3 | IP Webcam | ESP32-CAM | `USE_MIXED = True` |
-
----
-
-## Testing Video Sources
-
-### Test Webcam:
 ```python
 import cv2
-cap = cv2.VideoCapture(0)  # Try 0, 1, 2, etc.
-print("Working!" if cap.isOpened() else "Failed!")
+
+# Webcam index
+cap = cv2.VideoCapture(0)
+print("Webcam working" if cap.isOpened() else "Webcam failed")
 cap.release()
-```
 
-### Test Video File:
-```python
-import cv2
+# Video file
 cap = cv2.VideoCapture("your_video.mp4")
-print("Working!" if cap.isOpened() else "Failed!")
+print("File working" if cap.isOpened() else "File failed")
 cap.release()
 ```
 
-### Test IP Webcam:
-Open in browser: `http://192.168.1.50:8080/video`
-
-### Test ESP32-CAM:
-Open in browser: `http://192.168.1.101/stream`
-
----
+- Test IP webcams or ESP32 streams directly in a browser (`http://<ip>/video` or `http://<ip>/stream`).
 
 ## Troubleshooting
 
-**Webcam not working:**
-- Check camera permissions
-- Try different indices (0, 1, 2, etc.)
-- Make sure no other app is using the camera
-
-**Video file not loading:**
-- Check file path is correct
-- Make sure file exists in `ml_model/` folder
-- Try absolute path instead of relative
-
-**IP Webcam not connecting:**
-- Make sure phone and computer are on same WiFi
-- Check IP address is correct
-- Make sure IP Webcam server is running on phone
-
-**ESP32-CAM not connecting:**
-- Make sure ESP32-CAM is on same WiFi network
-- Check IP address in Serial Monitor
-- Verify stream URL is correct (`/stream`)
-
----
+- **Stream not opening?** Confirm the URL/IP address and that the device is reachable on the network.
+- **No video in dashboard?** Ensure the Flask backend and ML system are running, then reload the frontend.
+- **Wrong camera shown?** Double-check `SYSTEM_MODE` and the dictionary entries for each lane.
 
 ## Current Configuration
 
-Your system is currently set to use **Option 2** (Video Files):
-- North: `WhatsApp Video 2025-11-08 at 00.20.17_02904bca.mp4`
-- East: `WhatsApp Video 2025-11-08 at 00.20.17_269fdc46.mp4`
-
-To change, edit `ml_model/config.py` and set the appropriate option to `True`.
+The default repository setup runs `SYSTEM_MODE = "TWO_VIDEO"` with sample clips for the North and East lanes. Switch modes to enable four-lane operation or alternate hardware without changing application code.
 
 

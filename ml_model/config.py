@@ -1,54 +1,104 @@
 """
 IntelliFlow Configuration File
-Edit this file to configure your system
+
+Edit this file to configure your video sources and hardware.
+Choose a SYSTEM_MODE from the list below and update the related
+source dictionaries for your environment.
 """
 
 # ============================================================
-# VIDEO SOURCE CONFIGURATION
+# CORE MODE SELECTION
 # ============================================================
-# Choose ONE option below by setting USE_VIDEO_FILES, USE_WEBCAM, or USE_MIXED
+# Available options:
+#   "FOUR_VIDEO"  -> Four independent video files (North/South/East/West)
+#   "TWO_VIDEO"   -> Original two-video setup (North + East feeds)
+#   "TWO_ESP32"   -> Two ESP32-CAM devices (North + East)
+#   "TWO_IP"      -> Two IP Webcam streams (North + East)
+#   "TWO_MIXED"   -> Hybrid: North IP Webcam + East ESP32-CAM
+#   "FOUR_HYBRID" -> Four lanes (North/South IP Webcam, East/West ESP32-CAM)
+SYSTEM_MODE = "FOUR_VIDEO"
 
 # ============================================================
-# OPTION 1: Use Laptop Webcam (for both lanes)
+# SOURCE DEFINITIONS
 # ============================================================
-USE_WEBCAM = False
-NORTH_WEBCAM_INDEX = 0  # Camera index for North lane (usually 0)
-EAST_WEBCAM_INDEX = 1   # Camera index for East lane (usually 1, or same as 0 if only one camera)
+
+# Video files for each lane (used by TWO_VIDEO and FOUR_VIDEO)
+VIDEO_FILES = {
+    "North": "vid1.mp4",
+    "South": "WhatsApp Video 2025-11-08 at 00.20.17_269fdc46.mp4",
+    "East": "vid2.mp4",
+    "West": "WhatsApp Video 2025-11-08 at 00.20.17_02904bca.mp4",
+}
+
+# ESP32-CAM definitions for each lane (IP + optional stream endpoint)
+ESP32_CAMERAS = {
+    "North": {"ip": "192.168.1.100", "stream": "/stream"},
+    "South": {"ip": "192.168.1.101", "stream": "/stream"},
+    "East": {"ip": "192.168.1.102", "stream": "/stream"},
+    "West": {"ip": "192.168.1.103", "stream": "/stream"},
+}
+
+# IP Webcam URLs (Android IP Webcam app or similar)
+IP_WEBCAMS = {
+    "North": "http://192.168.1.50:8080/video",
+    "South": "http://192.168.1.51:8080/video",
+    "East": "http://192.168.1.52:8080/video",
+    "West": "http://192.168.1.53:8080/video",
+}
+
+# Optional laptops webcams (leave unused unless you wire them in custom mode)
+LOCAL_WEBCAMS = {
+    "North": 0,
+    "South": 1,
+    "East": 2,
+    "West": 3,
+}
 
 # ============================================================
-# OPTION 2: Use Video Files (for both lanes)
+# MODE → LANE SOURCE MAPPING
 # ============================================================
-USE_VIDEO_FILES = True
-NORTH_VIDEO_FILE = "vid1.mp4"
-EAST_VIDEO_FILE = "vid2.mp4"
 
-# ============================================================
-# OPTION 3: Mixed Sources (IP Webcam for North + ESP32-CAM for East)
-# ============================================================
-USE_MIXED = False
-# North Lane: IP Webcam App (Android phone)
-NORTH_IP_WEBCAM_URL = "http://192.168.1.50:8080/video"  # IP Webcam app URL
-# East Lane: ESP32-CAM
-EAST_ESP32_IP = "192.168.1.101"   # ESP32-CAM IP address
-EAST_ESP32_STREAM_URL = "/stream"  # ESP32-CAM stream endpoint
+LANE_SOURCES_BY_MODE = {
+    "FOUR_VIDEO": {
+        "North": {"type": "video", "path": VIDEO_FILES["North"]},
+        "South": {"type": "video", "path": VIDEO_FILES["South"]},
+        "East": {"type": "video", "path": VIDEO_FILES["East"]},
+        "West": {"type": "video", "path": VIDEO_FILES["West"]},
+    },
+    "TWO_VIDEO": {
+        "North": {"type": "video", "path": VIDEO_FILES["North"]},
+        "East": {"type": "video", "path": VIDEO_FILES["East"]},
+    },
+    "TWO_ESP32": {
+        "North": {"type": "esp32", **ESP32_CAMERAS["North"]},
+        "East": {"type": "esp32", **ESP32_CAMERAS["East"]},
+    },
+    "TWO_IP": {
+        "North": {"type": "ip", "url": IP_WEBCAMS["North"]},
+        "East": {"type": "ip", "url": IP_WEBCAMS["East"]},
+    },
+    "TWO_MIXED": {
+        "North": {"type": "ip", "url": IP_WEBCAMS["North"]},
+        "East": {"type": "esp32", **ESP32_CAMERAS["East"]},
+    },
+    "FOUR_HYBRID": {
+        "North": {"type": "ip", "url": IP_WEBCAMS["North"]},
+        "South": {"type": "ip", "url": IP_WEBCAMS["South"]},
+        "East": {"type": "esp32", **ESP32_CAMERAS["East"]},
+        "West": {"type": "esp32", **ESP32_CAMERAS["West"]},
+    },
+}
 
-# ============================================================
-# Other Options (if needed)
-# ============================================================
-# Option 4: Both ESP32-CAM
-# USE_VIDEO_FILES = False
-# USE_WEBCAM = False
-# USE_MIXED = False
-# NORTH_ESP32_IP = "192.168.1.100"
-# EAST_ESP32_IP = "192.168.1.101"
-# ESP32_STREAM_URL = "/stream"
+# Final lane source configuration consumed by IntelliFlow.
+# You can also override this dictionary manually if you ever need
+# a custom combination that is not covered above.
+LANE_SOURCES = LANE_SOURCES_BY_MODE.get(SYSTEM_MODE, LANE_SOURCES_BY_MODE["TWO_VIDEO"])
 
-# Option 5: Both IP Webcam
-# USE_VIDEO_FILES = False
-# USE_WEBCAM = False
-# USE_MIXED = False
-# NORTH_IP_WEBCAM_URL = "http://192.168.1.50:8080/video"
-# EAST_IP_WEBCAM_URL = "http://192.168.1.51:8080/video"
+# Groups map keeps lane associations for North/South and East/West
+LANE_GROUPS = {
+    "NorthSouth": ["North", "South"],
+    "EastWest": ["East", "West"],
+}
 
 # ============================================================
 # ARDUINO CONFIGURATION
@@ -63,9 +113,9 @@ ARDUINO_BAUD_RATE = 9600
 # ============================================================
 
 MIN_GREEN_TIME = 10    # Minimum green light time (seconds)
-MAX_GREEN_TIME = 40   # Maximum green light time (seconds)
-YELLOW_TIME = 4       # Yellow light time (seconds)
-ALL_RED_TIME = 2      # All red safety buffer (seconds)
+MAX_GREEN_TIME = 40    # Maximum green light time (seconds)
+YELLOW_TIME = 4        # Yellow light time (seconds)
+ALL_RED_TIME = 2       # All red safety buffer (seconds)
 
 # ============================================================
 # VEHICLE DETECTION

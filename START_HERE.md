@@ -12,9 +12,8 @@
 ## Current Configuration:
 
 Your system is configured via `ml_model/config.py`:
-- **Video Source**: Video files (can be changed to ESP32-CAM, IP Webcam, or webcams)
-- **North Lane Video**: `WhatsApp Video 2025-11-08 at 00.20.17_02904bca.mp4`
-- **East Lane Video**: `WhatsApp Video 2025-11-08 at 00.20.17_269fdc46.mp4`
+- **System Mode**: `TWO_VIDEO` (switchable to four-video or ESP32/IP webcam mixes)
+- **Lane Sources**: Controlled by the `SYSTEM_MODE` value and the `VIDEO_FILES`, `ESP32_CAMERAS`, and `IP_WEBCAMS` dictionaries
 - **Arduino Port**: `COM11` (update in config.py)
 
 ## 🎬 How to Run
@@ -48,7 +47,7 @@ Go to: **http://localhost:8080**
 ## 🎥 What You'll See
 
 ### Web Dashboard Features:
-- ✅ **Live Video Feeds**: Both North and East lane videos
+- ✅ **Live Video Feeds**: Auto-adjusts for 2-lane or 4-lane configurations
 - ✅ **Vehicle Detection Boxes**: Green boxes around ALL detected vehicles
 - ✅ **Real-time Counts**: Vehicle count displayed on each video
 - ✅ **Traffic Statistics**: Total vehicles, efficiency metrics
@@ -84,27 +83,42 @@ Go to: **http://localhost:8080**
 
 ### Change Video Sources
 Edit `ml_model/config.py`:
+
 ```python
-# Video Files
-USE_VIDEO_FILES = True
-NORTH_VIDEO_FILE = "your_video1.mp4"
-EAST_VIDEO_FILE = "your_video2.mp4"
+# Pick one of the supported modes:
+SYSTEM_MODE = "TWO_VIDEO"  # or "FOUR_VIDEO", "TWO_ESP32", "TWO_IP", "TWO_MIXED", "FOUR_HYBRID"
 
-# ESP32-CAM
-USE_VIDEO_FILES = False
-NORTH_ESP32_IP = "192.168.1.100"
-EAST_ESP32_IP = "192.168.1.101"
+# Update the dictionaries the mode relies on:
+VIDEO_FILES = {
+    "North": "vid1.mp4",
+    "South": "vid3.mp4",
+    "East": "vid2.mp4",
+    "West": "vid4.mp4",
+}
 
-# IP Webcam
-USE_VIDEO_FILES = False
-NORTH_IP_WEBCAM_URL = "http://192.168.1.50:8080/video"
-EAST_IP_WEBCAM_URL = "http://192.168.1.51:8080/video"
+ESP32_CAMERAS = {
+    "North": {"ip": "192.168.1.100", "stream": "/stream"},
+    "South": {"ip": "192.168.1.101", "stream": "/stream"},
+    "East": {"ip": "192.168.1.102", "stream": "/stream"},
+    "West": {"ip": "192.168.1.103", "stream": "/stream"},
+}
 
-# Webcams
-USE_VIDEO_FILES = False
-NORTH_WEBCAM_INDEX = 0
-EAST_WEBCAM_INDEX = 1
+IP_WEBCAMS = {
+    "North": "http://192.168.1.50:8080/video",
+    "South": "http://192.168.1.51:8080/video",
+    "East": "http://192.168.1.52:8080/video",
+    "West": "http://192.168.1.53:8080/video",
+}
 ```
+
+- `FOUR_VIDEO`: uses all four entries in `VIDEO_FILES`
+- `TWO_VIDEO`: uses the `North` and `East` entries in `VIDEO_FILES`
+- `TWO_ESP32`: uses the `North` and `East` entries in `ESP32_CAMERAS`
+- `TWO_IP`: uses the `North` and `East` URLs in `IP_WEBCAMS`
+- `TWO_MIXED`: `North` IP webcam + `East` ESP32-CAM
+- `FOUR_HYBRID`: IP webcams for North/South + ESP32-CAM for East/West
+
+Adjust the relevant dictionary entries to match your environment, then set `SYSTEM_MODE` accordingly.
 
 ### Change Detection Sensitivity
 Edit `ml_model/config.py`:

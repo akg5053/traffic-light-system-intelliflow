@@ -25,33 +25,17 @@
 
 Edit `ml_model/config.py`:
 
-### Video Files:
 ```python
-USE_VIDEO_FILES = True
-NORTH_VIDEO_FILE = "video1.mp4"
-EAST_VIDEO_FILE = "video2.mp4"
+SYSTEM_MODE = "TWO_VIDEO"  # or "FOUR_VIDEO", "TWO_ESP32", "TWO_IP", "TWO_MIXED", "FOUR_HYBRID"
 ```
 
-### ESP32-CAM:
-```python
-USE_VIDEO_FILES = False
-NORTH_ESP32_IP = "192.168.1.100"
-EAST_ESP32_IP = "192.168.1.101"
-```
+Update the relevant dictionaries in `config.py`:
 
-### IP Webcam (Android):
-```python
-USE_VIDEO_FILES = False
-NORTH_IP_WEBCAM_URL = "http://192.168.1.50:8080/video"
-EAST_IP_WEBCAM_URL = "http://192.168.1.51:8080/video"
-```
+- `VIDEO_FILES` → local MP4/WebM/etc paths (used by `TWO_VIDEO` and `FOUR_VIDEO`)
+- `ESP32_CAMERAS` → each lane's ESP32 IP + stream route
+- `IP_WEBCAMS` → full URLs from the Android IP Webcam app (or similar)
 
-### Webcams:
-```python
-USE_VIDEO_FILES = False
-NORTH_WEBCAM_INDEX = 0
-EAST_WEBCAM_INDEX = 1
-```
+Switching `SYSTEM_MODE` automatically reconfigures the ML pipeline and the React dashboard for two-lane or four-lane operation.
 
 ## 🖥️ Moving to New Machine
 

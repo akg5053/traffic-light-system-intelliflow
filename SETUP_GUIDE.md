@@ -154,50 +154,42 @@ Go to: http://localhost:8080
 
 ## 📹 Video Source Options
 
-### Option 1: Video Files (Current)
-Edit `ml_model/config.py`:
+All lane inputs are configured via `SYSTEM_MODE` in `ml_model/config.py`. Choose the mode that matches your hardware setup and update the supporting dictionaries.
+
 ```python
-USE_VIDEO_FILES = True
-NORTH_VIDEO_FILE = "your_video1.mp4"
-EAST_VIDEO_FILE = "your_video2.mp4"
+# Pick one
+SYSTEM_MODE = "TWO_VIDEO"   # Other choices: "FOUR_VIDEO", "TWO_ESP32", "TWO_IP", "TWO_MIXED", "FOUR_HYBRID"
+
+VIDEO_FILES = {
+    "North": "vid1.mp4",
+    "South": "vid3.mp4",
+    "East": "vid2.mp4",
+    "West": "vid4.mp4",
+}
+
+ESP32_CAMERAS = {
+    "North": {"ip": "192.168.1.100", "stream": "/stream"},
+    "South": {"ip": "192.168.1.101", "stream": "/stream"},
+    "East": {"ip": "192.168.1.102", "stream": "/stream"},
+    "West": {"ip": "192.168.1.103", "stream": "/stream"},
+}
+
+IP_WEBCAMS = {
+    "North": "http://192.168.1.50:8080/video",
+    "South": "http://192.168.1.51:8080/video",
+    "East": "http://192.168.1.52:8080/video",
+    "West": "http://192.168.1.53:8080/video",
+}
 ```
 
-### Option 2: ESP32-CAM
-1. **Setup ESP32-CAM:**
-   - Upload ESP32-CAM code to your ESP32 board
-   - Connect ESP32-CAM to WiFi
-   - Note the IP address (e.g., 192.168.1.100)
+- `FOUR_VIDEO`: four independent files (`VIDEO_FILES` North/South/East/West)
+- `TWO_VIDEO`: legacy two-video workflow (`VIDEO_FILES` North + East)
+- `TWO_ESP32`: two ESP32-CAM streams (`ESP32_CAMERAS` North + East)
+- `TWO_IP`: two IP webcam URLs (`IP_WEBCAMS` North + East)
+- `TWO_MIXED`: North IP webcam + East ESP32-CAM
+- `FOUR_HYBRID`: IP webcams for North/South and ESP32-CAM for East/West
 
-2. **Configure:**
-   Edit `ml_model/config.py`:
-   ```python
-   USE_VIDEO_FILES = False
-   NORTH_ESP32_IP = "192.168.1.100"  # Your ESP32-CAM IP
-   EAST_ESP32_IP = "192.168.1.101"   # Your ESP32-CAM IP
-   ESP32_STREAM_URL = "/stream"      # ESP32 stream endpoint
-   ```
-
-### Option 3: IP Webcam App (Android)
-1. **Setup IP Webcam:**
-   - Install "IP Webcam" app on Android phone
-   - Start server on phone
-   - Note the IP address and port (e.g., 192.168.1.50:8080)
-
-2. **Configure:**
-   Edit `ml_model/config.py`:
-   ```python
-   USE_VIDEO_FILES = False
-   NORTH_IP_WEBCAM_URL = "http://192.168.1.50:8080/video"
-   EAST_IP_WEBCAM_URL = "http://192.168.1.51:8080/video"
-   ```
-
-### Option 4: Webcams (Local Cameras)
-Edit `ml_model/config.py`:
-```python
-USE_VIDEO_FILES = False
-NORTH_WEBCAM_INDEX = 0  # Camera 0
-EAST_WEBCAM_INDEX = 1   # Camera 1
-```
+Update the relevant dictionary entries before switching `SYSTEM_MODE`. The React dashboard automatically adjusts to display two or four feeds based on the selected mode.
 
 ---
 
