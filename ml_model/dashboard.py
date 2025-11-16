@@ -4,7 +4,7 @@ Flask backend API for React frontend and WebSocket updates
 Includes video streaming for live vehicle detection
 """
 
-from flask import Flask, jsonify, Response
+from flask import Flask, jsonify, Response, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 import json
@@ -18,9 +18,55 @@ CORS(app)  # Enable CORS for React frontend
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 DATA_FILE = "traffic_log.json"
+EV_STATE_FILE = "emergency_state.json"
 
 # Global reference to traffic controller for video streaming
 traffic_controller = None
+
+# ============================================================
+# Emergency Vehicle Preemption (EVP) State Management
+# ============================================================
+
+def load_evp_state():
+    """Load emergency vehicle preemption state from JSON file"""
+    if not os.path.exists(EV_STATE_FILE):
+        default_state = {
+            "active": False,
+            "lane": None,
+            "started_at": None,
+            "eta_seconds": None,
+            "expected_arrival_ts": None
+        }
+        save_evp_state(default_state)
+        return default_state
+    try:
+        with open(EV_STATE_FILE, "r") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        default_state = {
+            "active": False,
+            "lane": None,
+            "started_at": None,
+            "eta_seconds": None,
+            "expected_arrival_ts": None
+        }
+        save_evp_state(default_state)
+        return default_state
+
+def save_evp_state(state):
+    """Save emergency vehicle preemption state to JSON file"""
+    try:
+        with open(EV_STATE_FILE, "w") as f:
+            json.dump(state, f, indent=2)
+    except IOError as e:
+        print(f"⚠️ Failed to save EV state: {e}")
+
+def require_secret(request):
+    """Check if request has valid shared secret (optional auth)"""
+    secret = os.environ.get("EVP_SECRET", None)
+    if not secret:
+        return True  # No secret configured, allow all
+    return request.headers.get("X-Auth") == secret
 
 def set_traffic_controller(controller):
     """Set the traffic controller instance for video streaming"""
@@ -82,31 +128,70 @@ def build_dashboard_state():
         total_vehicles = sum(vehicle_counts.get(lane, 0) for lane in lane_order if lane in lanes_available)
         
         # Derive remaining time from phase start + durations
+        # Always calculate fallback values, then use controller's if valid
         remaining_times_group = {"NorthSouth": 0.0, "EastWest": 0.0}
+        
+        # Calculate fallback values from phase_start_time
         elapsed = 0.0
         if hasattr(traffic_controller, "phase_start_time"):
-            elapsed = time.time() - traffic_controller.phase_start_time
+            elapsed = max(0.0, time.time() - traffic_controller.phase_start_time)
+            # Safety check: elapsed shouldn't be unreasonably large (max 60s for any phase)
+            if elapsed > 60:
+                elapsed = 0.0  # Reset if stale
 
         yellow_time = getattr(traffic_controller, "YELLOW_TIME", 3)
         all_red_time = getattr(traffic_controller, "ALL_RED_TIME", 2)
 
+        # Calculate fallback remaining times
         if "NorthSouth_Green" in current_phase:
-            remaining_times_group["NorthSouth"] = max(0.0, signal_timings.get("NorthSouth", 0) - elapsed)
+            green_duration = signal_timings.get("NorthSouth", 0)
+            remaining_times_group["NorthSouth"] = max(0.0, min(green_duration, green_duration - elapsed))
         elif "NorthSouth_Yellow" in current_phase:
-            remaining_times_group["NorthSouth"] = max(0.0, yellow_time - elapsed)
+            remaining_times_group["NorthSouth"] = max(0.0, min(yellow_time, yellow_time - elapsed))
         elif "EastWest_Green" in current_phase:
-            remaining_times_group["EastWest"] = max(0.0, signal_timings.get("EastWest", 0) - elapsed)
+            green_duration = signal_timings.get("EastWest", 0)
+            remaining_times_group["EastWest"] = max(0.0, min(green_duration, green_duration - elapsed))
         elif "EastWest_Yellow" in current_phase:
-            remaining_times_group["EastWest"] = max(0.0, yellow_time - elapsed)
+            remaining_times_group["EastWest"] = max(0.0, min(yellow_time, yellow_time - elapsed))
         elif "All_Red" in current_phase:
-            remaining_times_group["NorthSouth"] = max(0.0, all_red_time - elapsed)
-            remaining_times_group["EastWest"] = max(0.0, all_red_time - elapsed)
+            remaining_times_group["NorthSouth"] = max(0.0, min(all_red_time, all_red_time - elapsed))
+            remaining_times_group["EastWest"] = max(0.0, min(all_red_time, all_red_time - elapsed))
+        
+        # Override with controller's values if available and valid (more accurate)
+        if hasattr(traffic_controller, "phase_remaining_times"):
+            controller_remaining = getattr(traffic_controller, "phase_remaining_times", {})
+            # Use controller values, but validate they're reasonable (not negative except -1 for EV mode)
+            if "NorthSouth" in controller_remaining:
+                val = controller_remaining["NorthSouth"]
+                if val == -1:
+                    remaining_times_group["NorthSouth"] = -1  # EV mode
+                elif val >= 0 and val <= 60:  # Reasonable range
+                    remaining_times_group["NorthSouth"] = val
+            if "EastWest" in controller_remaining:
+                val = controller_remaining["EastWest"]
+                if val == -1:
+                    remaining_times_group["EastWest"] = -1  # EV mode
+                elif val >= 0 and val <= 60:  # Reasonable range
+                    remaining_times_group["EastWest"] = val
 
         remaining_times = {}
-        for group, lanes in lane_groups.items():
-            group_remaining_int = max(0, int(round(remaining_times_group.get(group, 0.0))))
-            for lane in lanes:
-                remaining_times[lane] = group_remaining_int
+        # Check if controller has phase_remaining_times with EV mode (-1)
+        if hasattr(traffic_controller, "phase_remaining_times"):
+            controller_remaining = getattr(traffic_controller, "phase_remaining_times", {})
+            for group, lanes in lane_groups.items():
+                for lane in lanes:
+                    # Check if this lane is in EV mode (value is -1)
+                    if controller_remaining.get(group) == -1 or controller_remaining.get(lane) == -1:
+                        # EV mode - show EV countdown
+                        remaining_times[lane] = -1  # Special value for EV mode
+                    else:
+                        group_remaining_int = max(0, int(round(remaining_times_group.get(group, 0.0))))
+                        remaining_times[lane] = group_remaining_int
+        else:
+            for group, lanes in lane_groups.items():
+                group_remaining_int = max(0, int(round(remaining_times_group.get(group, 0.0))))
+                for lane in lanes:
+                    remaining_times[lane] = group_remaining_int
         for lane in lane_order:
             remaining_times.setdefault(lane, 0)
     else:
@@ -137,6 +222,14 @@ def build_dashboard_state():
     avg_wait_intelliflow = (signal_timings.get("NorthSouth", 5) + signal_timings.get("EastWest", 5)) / 2
     efficiency_improvement = round(((avg_wait_traditional - avg_wait_intelliflow) / avg_wait_traditional) * 100, 2)
     
+    # Load EVP state
+    evp_state = load_evp_state()
+    if evp_state.get("active") and evp_state.get("expected_arrival_ts"):
+        remaining = max(0, evp_state["expected_arrival_ts"] - time.time())
+        evp_state["remaining_seconds"] = round(remaining, 1)
+    else:
+        evp_state["remaining_seconds"] = 0
+    
     return {
         "logs": logs,
         "latest": latest,
@@ -153,6 +246,7 @@ def build_dashboard_state():
         "lanes_available": list(lanes_available),
         "lane_groups": lane_groups,
         "system_mode": getattr(traffic_controller, 'system_mode', 'TWO_VIDEO') if traffic_controller else "TWO_VIDEO",
+        "evp_state": evp_state,
     }
 
 
@@ -180,6 +274,97 @@ def api_stats():
         "avg_efficiency": round(avg_efficiency, 2),
         "total_cycles": len(logs)
     })
+
+# ============================================================
+# Emergency Vehicle Preemption (EVP) API Endpoints
+# ============================================================
+
+@app.route("/api/evp/start", methods=["POST"])
+def evp_start():
+    """Start emergency vehicle preemption for a specific lane"""
+    if not require_secret(request):
+        return jsonify({"ok": False, "error": "unauthorized"}), 401
+    
+    try:
+        data = request.get_json(force=True)
+        lane = data.get("lane")  # "N", "E", "S", "W"
+        eta_seconds = int(data.get("eta_seconds", 60))
+        
+        # Validate lane
+        lane_map = {"N": "North", "E": "East", "S": "South", "W": "West"}
+        if lane not in lane_map:
+            return jsonify({"ok": False, "error": "invalid lane. Use N, E, S, or W"}), 400
+        
+        if eta_seconds < 10 or eta_seconds > 300:
+            return jsonify({"ok": False, "error": "eta_seconds must be between 10 and 300"}), 400
+        
+        now = time.time()
+        state = {
+            "active": True,
+            "lane": lane_map[lane],
+            "started_at": now,
+            "eta_seconds": eta_seconds,
+            "expected_arrival_ts": now + eta_seconds
+        }
+        
+        save_evp_state(state)
+        
+        # Broadcast to dashboard clients via WebSocket
+        try:
+            socketio.emit("evp_state", state)
+            push_live_update()  # Also trigger regular update
+        except Exception as e:
+            print(f"⚠️ WebSocket broadcast failed: {e}")
+        
+        print(f"🚑 Emergency Vehicle Preemption STARTED: Lane {lane_map[lane]}, ETA {eta_seconds}s")
+        return jsonify({"ok": True, "state": state})
+    
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+@app.route("/api/evp/clear", methods=["POST"])
+def evp_clear():
+    """Clear emergency vehicle preemption and return to normal operation"""
+    if not require_secret(request):
+        return jsonify({"ok": False, "error": "unauthorized"}), 401
+    
+    try:
+        state = {
+            "active": False,
+            "lane": None,
+            "started_at": None,
+            "eta_seconds": None,
+            "expected_arrival_ts": None
+        }
+        
+        save_evp_state(state)
+        
+        # Broadcast to dashboard clients via WebSocket
+        try:
+            socketio.emit("evp_state", state)
+            push_live_update()  # Also trigger regular update
+        except Exception as e:
+            print(f"⚠️ WebSocket broadcast failed: {e}")
+        
+        print("✅ Emergency Vehicle Preemption CLEARED - Returning to normal operation")
+        return jsonify({"ok": True, "state": state})
+    
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+@app.route("/api/evp/state", methods=["GET"])
+def evp_state():
+    """Get current emergency vehicle preemption state"""
+    state = load_evp_state()
+    
+    # Calculate remaining time if active
+    if state.get("active") and state.get("expected_arrival_ts"):
+        remaining = max(0, state["expected_arrival_ts"] - time.time())
+        state["remaining_seconds"] = round(remaining, 1)
+    else:
+        state["remaining_seconds"] = 0
+    
+    return jsonify(state)
 
 # ============================================================
 # Video Streaming Endpoints
@@ -262,24 +447,51 @@ def video_west():
 @app.route("/api/video/frames")
 def video_frames():
     """Get latest frames as base64 encoded images"""
-    if traffic_controller:
+    if not traffic_controller:
+        empty_frames = {"north": None, "south": None, "east": None, "west": None}
+        empty_counts = {"north": 0, "south": 0, "east": 0, "west": 0}
+        return jsonify({"frames": empty_frames, "counts": empty_counts, "lanes": []})
+    
+    try:
         lane_order = getattr(traffic_controller, 'lane_order', ["North", "South", "East", "West"])
         frames_payload = {}
         counts_payload = {}
-        with traffic_controller.frame_lock:
+        
+        # Safely access encoded_frames with proper locking
+        if hasattr(traffic_controller, 'frame_lock') and hasattr(traffic_controller, 'encoded_frames'):
+            with traffic_controller.frame_lock:
+                encoded_frames = getattr(traffic_controller, 'encoded_frames', {})
+                current_counts = getattr(traffic_controller, 'current_counts', {})
+                
+                for lane in lane_order:
+                    encoded = encoded_frames.get(lane)
+                    if encoded and isinstance(encoded, bytes):
+                        try:
+                            frames_payload[lane.lower()] = base64.b64encode(encoded).decode('utf-8')
+                        except Exception as e:
+                            frames_payload[lane.lower()] = None
+                    else:
+                        frames_payload[lane.lower()] = None
+                    counts_payload[lane.lower()] = current_counts.get(lane, 0)
+        else:
+            # Fallback if frame_lock or encoded_frames don't exist
             for lane in lane_order:
-                encoded = traffic_controller.encoded_frames.get(lane)
-                frames_payload[lane.lower()] = base64.b64encode(encoded).decode('utf-8') if encoded else None
-                counts_payload[lane.lower()] = traffic_controller.current_counts.get(lane, 0)
+                frames_payload[lane.lower()] = None
+                counts_payload[lane.lower()] = getattr(traffic_controller, 'current_counts', {}).get(lane, 0)
 
         return jsonify({
             "frames": frames_payload,
             "counts": counts_payload,
             "lanes": getattr(traffic_controller, 'active_lanes', lane_order),
         })
-    empty_frames = {"north": None, "south": None, "east": None, "west": None}
-    empty_counts = {"north": 0, "south": 0, "east": 0, "west": 0}
-    return jsonify({"frames": empty_frames, "counts": empty_counts, "lanes": []})
+    except Exception as e:
+        # Return empty frames on any error to prevent 500 errors
+        print(f"⚠️ Error in video_frames endpoint: {e}")
+        import traceback
+        traceback.print_exc()
+        empty_frames = {"north": None, "south": None, "east": None, "west": None}
+        empty_counts = {"north": 0, "south": 0, "east": 0, "west": 0}
+        return jsonify({"frames": empty_frames, "counts": empty_counts, "lanes": []})
 
 # ============================================================
 # WebSocket Updates
@@ -304,11 +516,10 @@ def handle_connect():
     push_live_update()  # Send current data on connect
 
 if __name__ == "__main__":
-    # This will only run if dashboard.py is started directly
-    # If started from intelliflow_ml.py, Flask server runs in a thread there
     print("🚀 IntelliFlow API Server running at http://127.0.0.1:5000")
     print("📡 WebSocket enabled for real-time updates")
     print("🔗 React frontend should connect to: http://127.0.0.1:5000")
     print("\n⚠️  NOTE: If you're running intelliflow_ml.py, Flask server will start automatically.")
     print("⚠️  You don't need to run dashboard.py separately.\n")
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
+    # Change 0.0.0.0 instead of localhost binding
+    socketio.run(app, host="0.0.0.0", port=5000, debug=False, allow_unsafe_werkzeug=True)

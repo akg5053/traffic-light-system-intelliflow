@@ -1,16 +1,22 @@
 [
   {
-    "timestamp": "2025-11-08T15:20:33.638925",
+    "timestamp": "2025-11-16T09:22:37.087499",
     "vehicle_counts": {
-      "North": 9,
-      "East": 5
+      "North": 11,
+      "South": 0,
+      "East": 6,
+      "West": 0
+    },
+    "group_counts": {
+      "NorthSouth": 11,
+      "EastWest": 6
     },
     "signal_timings": {
       "NorthSouth": 10,
       "EastWest": 10
     },
     "current_phase": "All_Red",
-    "total_vehicles": 14,
+    "total_vehicles": 17,
     "emergency": false,
     "avg_wait_time_traditional": 90,
     "avg_wait_time_intelliflow": 10.0,
@@ -18,89 +24,47 @@
     "efficiency_improvement": 88.89
   },
   {
-    "timestamp": "2025-11-08T15:21:15.168077",
+    "timestamp": "2025-11-16T09:23:24.044443",
     "vehicle_counts": {
-      "North": 9,
-      "East": 7
+      "North": 8,
+      "South": 0,
+      "East": 8,
+      "West": 0
+    },
+    "group_counts": {
+      "NorthSouth": 8,
+      "EastWest": 8
     },
     "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 10
+      "NorthSouth": 22,
+      "EastWest": 12
     },
     "current_phase": "All_Red",
     "total_vehicles": 16,
     "emergency": false,
     "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 14.0,
-    "time_saved": 76.0,
-    "efficiency_improvement": 84.44
-  },
-  {
-    "timestamp": "2025-11-08T15:22:00.668336",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 17,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T15:22:48.127853",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 17,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
     "avg_wait_time_intelliflow": 17.0,
     "time_saved": 73.0,
     "efficiency_improvement": 81.11
   },
   {
-    "timestamp": "2025-11-08T15:23:35.659809",
+    "timestamp": "2025-11-16T09:24:08.186337",
     "vehicle_counts": {
-      "North": 8,
-      "East": 7
+      "North": 11,
+      "South": 0,
+      "East": 7,
+      "West": 0
     },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 17.0,
-    "time_saved": 73.0,
-    "efficiency_improvement": 81.11
-  },
-  {
-    "timestamp": "2025-11-08T15:24:19.175957",
-    "vehicle_counts": {
-      "North": 7,
-      "East": 7
+    "group_counts": {
+      "NorthSouth": 11,
+      "EastWest": 7
     },
     "signal_timings": {
       "NorthSouth": 16,
       "EastWest": 14
     },
     "current_phase": "All_Red",
-    "total_vehicles": 14,
+    "total_vehicles": 18,
     "emergency": false,
     "avg_wait_time_traditional": 90,
     "avg_wait_time_intelliflow": 15.0,
@@ -108,1223 +72,71 @@
     "efficiency_improvement": 83.33
   },
   {
-    "timestamp": "2025-11-08T15:25:00.642045",
+    "timestamp": "2025-11-16T09:24:57.986843",
     "vehicle_counts": {
-      "North": 8,
-      "East": 6
+      "North": 7,
+      "South": 0,
+      "East": 5,
+      "West": 0
+    },
+    "group_counts": {
+      "NorthSouth": 7,
+      "EastWest": 5
+    },
+    "signal_timings": {
+      "NorthSouth": 22,
+      "EastWest": 14
+    },
+    "current_phase": "All_Red",
+    "total_vehicles": 12,
+    "emergency": false,
+    "avg_wait_time_traditional": 90,
+    "avg_wait_time_intelliflow": 18.0,
+    "time_saved": 72.0,
+    "efficiency_improvement": 80.0
+  },
+  {
+    "timestamp": "2025-11-16T09:25:34.897330",
+    "vehicle_counts": {
+      "North": 9,
+      "South": 0,
+      "East": 6,
+      "West": 0
+    },
+    "group_counts": {
+      "NorthSouth": 9,
+      "EastWest": 6
     },
     "signal_timings": {
       "NorthSouth": 14,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 14,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 14.0,
-    "time_saved": 76.0,
-    "efficiency_improvement": 84.44
-  },
-  {
-    "timestamp": "2025-11-08T15:25:42.119337",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 16,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 14.0,
-    "time_saved": 76.0,
-    "efficiency_improvement": 84.44
-  },
-  {
-    "timestamp": "2025-11-08T15:26:25.673289",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T15:27:11.106711",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T15:27:54.598110",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T15:28:40.124276",
-    "vehicle_counts": {
-      "North": 11,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 18,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T15:29:29.577412",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 22,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 18.0,
-    "time_saved": 72.0,
-    "efficiency_improvement": 80.0
-  },
-  {
-    "timestamp": "2025-11-08T15:30:13.037517",
-    "vehicle_counts": {
-      "North": 8,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T15:30:56.552279",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 16,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 17,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T15:31:44.012087",
-    "vehicle_counts": {
-      "North": 11,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 18,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 17.0,
-    "time_saved": 73.0,
-    "efficiency_improvement": 81.11
-  },
-  {
-    "timestamp": "2025-11-08T15:32:33.513010",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 22,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 18.0,
-    "time_saved": 72.0,
-    "efficiency_improvement": 80.0
-  },
-  {
-    "timestamp": "2025-11-08T15:33:18.997972",
-    "vehicle_counts": {
-      "North": 8,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T15:34:02.605715",
-    "vehicle_counts": {
-      "North": 7,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 16,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 14,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T15:34:44.140088",
-    "vehicle_counts": {
-      "North": 8,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 14,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 14.0,
-    "time_saved": 76.0,
-    "efficiency_improvement": 84.44
-  },
-  {
-    "timestamp": "2025-11-08T15:35:27.642822",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 16,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T15:36:13.151026",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T15:36:56.593468",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T15:37:40.038883",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T15:38:25.437632",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T15:39:10.848098",
-    "vehicle_counts": {
-      "North": 8,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T15:39:54.318123",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 16,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 17,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T15:40:41.804934",
-    "vehicle_counts": {
-      "North": 11,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 17,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 17.0,
-    "time_saved": 73.0,
-    "efficiency_improvement": 81.11
-  },
-  {
-    "timestamp": "2025-11-08T15:41:29.262430",
-    "vehicle_counts": {
-      "North": 8,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 22,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 17.0,
-    "time_saved": 73.0,
-    "efficiency_improvement": 81.11
-  },
-  {
-    "timestamp": "2025-11-08T15:42:12.792987",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 16,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 17,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T15:43:00.332274",
-    "vehicle_counts": {
-      "North": 11,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 18,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 17.0,
-    "time_saved": 73.0,
-    "efficiency_improvement": 81.11
-  },
-  {
-    "timestamp": "2025-11-08T15:44:01.776603",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 22,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 18.0,
-    "time_saved": 72.0,
-    "efficiency_improvement": 80.0
-  },
-  {
-    "timestamp": "2025-11-08T15:45:00.656258",
-    "vehicle_counts": {
-      "North": 11,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 18,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T15:46:03.613215",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 22,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 18.0,
-    "time_saved": 72.0,
-    "efficiency_improvement": 80.0
-  },
-  {
-    "timestamp": "2025-11-08T15:47:00.514926",
-    "vehicle_counts": {
-      "North": 11,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 17,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T15:48:01.405272",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 22,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 17.0,
-    "time_saved": 73.0,
-    "efficiency_improvement": 81.11
-  },
-  {
-    "timestamp": "2025-11-08T15:49:00.310790",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T15:49:59.242092",
-    "vehicle_counts": {
-      "North": 11,
-      "East": 5
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T15:50:58.162321",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 22,
-      "EastWest": 10
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T15:52:00.921929",
-    "vehicle_counts": {
-      "North": 8,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T15:52:57.864122",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 16,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 17,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T15:54:02.599576",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 17.0,
-    "time_saved": 73.0,
-    "efficiency_improvement": 81.11
-  },
-  {
-    "timestamp": "2025-11-08T15:55:09.128035",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T15:56:06.020710",
-    "vehicle_counts": {
-      "North": 8,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T15:57:06.734543",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 16,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 17,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T15:58:07.616397",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 5
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 14,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 17.0,
-    "time_saved": 73.0,
-    "efficiency_improvement": 81.11
-  },
-  {
-    "timestamp": "2025-11-08T15:59:02.527944",
-    "vehicle_counts": {
-      "North": 7,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 10
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 14,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 14.0,
-    "time_saved": 76.0,
-    "efficiency_improvement": 84.44
-  },
-  {
-    "timestamp": "2025-11-08T15:59:57.476384",
-    "vehicle_counts": {
-      "North": 11,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 14,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 18,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 14.0,
-    "time_saved": 76.0,
-    "efficiency_improvement": 84.44
-  },
-  {
-    "timestamp": "2025-11-08T16:01:00.355903",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 22,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 18.0,
-    "time_saved": 72.0,
-    "efficiency_improvement": 80.0
-  },
-  {
-    "timestamp": "2025-11-08T16:01:59.219421",
-    "vehicle_counts": {
-      "North": 7,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 13,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T16:02:52.104064",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 14,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 13.0,
-    "time_saved": 77.0,
-    "efficiency_improvement": 85.56
-  },
-  {
-    "timestamp": "2025-11-08T16:03:49.034800",
-    "vehicle_counts": {
-      "North": 11,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 18,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T16:04:51.864560",
-    "vehicle_counts": {
-      "North": 8,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 22,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 14,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 18.0,
-    "time_saved": 72.0,
-    "efficiency_improvement": 80.0
-  },
-  {
-    "timestamp": "2025-11-08T16:05:54.408986",
-    "vehicle_counts": {
-      "North": 11,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 16,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 18,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 14.0,
-    "time_saved": 76.0,
-    "efficiency_improvement": 84.44
-  },
-  {
-    "timestamp": "2025-11-08T16:07:01.108171",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 22,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 17,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 18.0,
-    "time_saved": 72.0,
-    "efficiency_improvement": 80.0
-  },
-  {
-    "timestamp": "2025-11-08T16:08:02.031053",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 17.0,
-    "time_saved": 73.0,
-    "efficiency_improvement": 81.11
-  },
-  {
-    "timestamp": "2025-11-08T16:09:04.794807",
-    "vehicle_counts": {
-      "North": 11,
-      "East": 5
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T16:10:03.690661",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 5
-    },
-    "signal_timings": {
-      "NorthSouth": 22,
       "EastWest": 10
     },
     "current_phase": "All_Red",
     "total_vehicles": 15,
     "emergency": false,
     "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
+    "avg_wait_time_intelliflow": 12.0,
+    "time_saved": 78.0,
+    "efficiency_improvement": 86.67
   },
   {
-    "timestamp": "2025-11-08T16:11:00.586495",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 10
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T16:11:57.496971",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T16:12:56.404750",
+    "timestamp": "2025-11-16T09:26:17.821238",
     "vehicle_counts": {
       "North": 10,
-      "East": 6
+      "South": 0,
+      "East": 5,
+      "West": 0
+    },
+    "group_counts": {
+      "NorthSouth": 10,
+      "EastWest": 5
     },
     "signal_timings": {
       "NorthSouth": 18,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T16:13:55.302646",
-    "vehicle_counts": {
-      "North": 8,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
       "EastWest": 12
     },
     "current_phase": "All_Red",
     "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T16:14:52.205619",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 16,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 17,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T16:15:53.105518",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 17.0,
-    "time_saved": 73.0,
-    "efficiency_improvement": 81.11
-  },
-  {
-    "timestamp": "2025-11-08T16:16:49.992563",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T16:17:48.973534",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 16,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T16:18:47.806161",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 17,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 16.0,
-    "time_saved": 74.0,
-    "efficiency_improvement": 82.22
-  },
-  {
-    "timestamp": "2025-11-08T16:19:52.621924",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 17,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 17.0,
-    "time_saved": 73.0,
-    "efficiency_improvement": 81.11
-  },
-  {
-    "timestamp": "2025-11-08T16:20:53.540832",
-    "vehicle_counts": {
-      "North": 11,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 17,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 17.0,
-    "time_saved": 73.0,
-    "efficiency_improvement": 81.11
-  },
-  {
-    "timestamp": "2025-11-08T16:21:54.418819",
-    "vehicle_counts": {
-      "North": 7,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 22,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 14,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 17.0,
-    "time_saved": 73.0,
-    "efficiency_improvement": 81.11
-  },
-  {
-    "timestamp": "2025-11-08T16:22:53.145145",
-    "vehicle_counts": {
-      "North": 9,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 14,
-      "EastWest": 14
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 14.0,
-    "time_saved": 76.0,
-    "efficiency_improvement": 84.44
-  },
-  {
-    "timestamp": "2025-11-08T16:23:50.032699",
-    "vehicle_counts": {
-      "North": 11,
-      "East": 6
-    },
-    "signal_timings": {
-      "NorthSouth": 18,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 17,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 15.0,
-    "time_saved": 75.0,
-    "efficiency_improvement": 83.33
-  },
-  {
-    "timestamp": "2025-11-08T16:24:51.000464",
-    "vehicle_counts": {
-      "North": 10,
-      "East": 5
-    },
-    "signal_timings": {
-      "NorthSouth": 22,
-      "EastWest": 12
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 15,
-    "emergency": false,
-    "avg_wait_time_traditional": 90,
-    "avg_wait_time_intelliflow": 17.0,
-    "time_saved": 73.0,
-    "efficiency_improvement": 81.11
-  },
-  {
-    "timestamp": "2025-11-08T16:25:51.769208",
-    "vehicle_counts": {
-      "North": 11,
-      "East": 7
-    },
-    "signal_timings": {
-      "NorthSouth": 20,
-      "EastWest": 10
-    },
-    "current_phase": "All_Red",
-    "total_vehicles": 18,
     "emergency": false,
     "avg_wait_time_traditional": 90,
     "avg_wait_time_intelliflow": 15.0,

@@ -31,7 +31,30 @@ Thumbs.db
 
 # Project artifacts
 ml_model/traffic_log.json
+ml_model/emergency_state.json
 *.mp4
 *.avi
 *.mov
 *.mkv
+
+# Model files (large - will auto-download)
+ml_model/*.pt
+ml_model/*.onnx
+
+# Cloudflare/ngrok executables (download separately)
+cloudflared.exe
+ngrok.exe
+ngrok
+
+# Environment files (may contain secrets)
+.env.local
+.env
+*.env
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log

@@ -1,0 +1,38 @@
+# .gitignore.include-all
+# Use this if you want to include EVERYTHING in Git
+# Rename this to .gitignore (backup current .gitignore first!)
+
+# Only exclude truly unnecessary files
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+.DS_Store?
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+*.cache
+
+# That's it! Everything else will be included:
+# - venv/ (will be included)
+# - node_modules/ (will be included)
+# - *.mp4 (will be included)
+# - *.pt (will be included)
+# - *.exe (will be included)
+# - Everything else!
+
+# ⚠️ WARNING: This will make your repository HUGE (1-5 GB)
+# ⚠️ Git may be slow
+# ⚠️ Some files are OS-specific (venv, .exe) and may not work on different OS
+# ⚠️ Consider using Git LFS for files > 50MB
+

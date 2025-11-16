@@ -16,7 +16,7 @@ source dictionaries for your environment.
 #   "TWO_IP"      -> Two IP Webcam streams (North + East)
 #   "TWO_MIXED"   -> Hybrid: North IP Webcam + East ESP32-CAM
 #   "FOUR_HYBRID" -> Four lanes (North/South IP Webcam, East/West ESP32-CAM)
-SYSTEM_MODE = "FOUR_VIDEO"
+SYSTEM_MODE = "TWO_VIDEO"
 
 # ============================================================
 # SOURCE DEFINITIONS
@@ -40,9 +40,9 @@ ESP32_CAMERAS = {
 
 # IP Webcam URLs (Android IP Webcam app or similar)
 IP_WEBCAMS = {
-    "North": "http://192.168.1.50:8080/video",
-    "South": "http://192.168.1.51:8080/video",
-    "East": "http://192.168.1.52:8080/video",
+    "North": "http://10.142.4.81:8080/video",
+    "South": "http://10.142.4.79:8080/video",
+    "East": "http://10.142.4.79:8080/video",
     "West": "http://192.168.1.53:8080/video",
 }
 

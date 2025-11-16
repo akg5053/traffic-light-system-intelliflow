@@ -6,7 +6,8 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { motion, AnimatePresence } from "framer-motion";
 import io from "socket.io-client";
 
-const API_URL = "http://127.0.0.1:5000";
+// API URL - can be overridden via environment variable for ngrok/production
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
 
 type LaneName = "North" | "South" | "East" | "West";
 
@@ -31,6 +32,15 @@ interface LaneGroups {
   [group: string]: string[];
 }
 
+interface EvpState {
+  active: boolean;
+  lane: string | null;
+  started_at: number | null;
+  eta_seconds: number | null;
+  expected_arrival_ts: number | null;
+  remaining_seconds?: number;
+}
+
 interface TrafficData {
   vehicle_counts: VehicleCounts;
   group_counts: { [key: string]: number };
@@ -45,6 +55,7 @@ interface TrafficData {
   lanes_available: string[];
   lane_groups: LaneGroups;
   system_mode: string;
+  evp_state?: EvpState;
 }
 
 interface TrafficLog {
@@ -143,6 +154,15 @@ export default function Index() {
   const [stats, setStats] = useState<StatsSummary>({ total_vehicles: 0, avg_efficiency: 0, total_cycles: 0 });
   const [videoFrames, setVideoFrames] = useState<Record<string, string | null>>({});
   const [remainingTime, setRemainingTime] = useState<RemainingTimes>(DEFAULT_REMAINING);
+  const [evpState, setEvpState] = useState<EvpState>({
+    active: false,
+    lane: null,
+    started_at: null,
+    eta_seconds: null,
+    expected_arrival_ts: null,
+    remaining_seconds: 0,
+  });
+  const [evpPopupDismissed, setEvpPopupDismissed] = useState<boolean>(false);
 
   const laneOrder: LaneName[] = ["North", "South", "East", "West"];
   const vehicleCounts = data?.vehicle_counts ?? DEFAULT_COUNTS;
@@ -177,6 +197,11 @@ export default function Index() {
       setData(normalized);
       setRemainingTime(normalized.remaining_times);
       setLogs(json.logs ?? []);
+      
+      // Update EVP state from data
+      if (json.evp_state) {
+        setEvpState(json.evp_state);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -226,6 +251,22 @@ export default function Index() {
       setData(normalized);
       setRemainingTime(normalized.remaining_times);
       setLogs(updateData.logs ?? []);
+      
+      // Update EVP state from update
+      if (updateData.evp_state) {
+        setEvpState(updateData.evp_state);
+      }
+    });
+
+    socket.on("evp_state", (evpData: EvpState) => {
+      console.log("Received EVP state update:", evpData);
+      setEvpState((prev) => {
+        // Reset popup dismissed state when new EV is detected
+        if (evpData.active && !prev.active) {
+          setEvpPopupDismissed(false);
+        }
+        return evpData;
+      });
     });
 
     // Poll every 500ms for data updates (faster for real-time traffic lights)
@@ -252,32 +293,60 @@ export default function Index() {
     };
   }, [fetchData, fetchStats, fetchVideoFrames]);
 
+  // Update EVP countdown timer every second
+  useEffect(() => {
+    if (!evpState.active || !evpState.expected_arrival_ts) return;
+    
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, evpState.expected_arrival_ts! - Date.now() / 1000);
+      
+      // Only update if value actually changed (prevent unnecessary re-renders)
+      setEvpState((prev) => {
+        const newRemaining = Math.round(remaining * 10) / 10;
+        if (Math.abs(prev.remaining_seconds || 0 - newRemaining) < 0.1) {
+          return prev; // No change, return previous state
+        }
+        return {
+          ...prev,
+          remaining_seconds: newRemaining,
+        };
+      });
+      
+      // Don't auto-clear - let the backend handle it or user clears manually
+      // This prevents sudden state changes that might cause refresh
+    }, 500); // Update every 500ms instead of 100ms to reduce re-renders
+    
+    return () => clearInterval(interval);
+  }, [evpState.active, evpState.expected_arrival_ts]);
+
   const getLightStatus = (lane: LaneName) => {
-    if (!data) return { color: "red", time: 0 };
+    if (!data) return { color: "red", time: 0, evMode: false };
     const phase = data.current_phase || "All_Red";
     const laneGroups = data.lane_groups || DEFAULT_LANE_GROUPS;
     const groupEntry = Object.entries(laneGroups).find(([, lanes]) => lanes.includes(lane));
-    const laneRemaining = Math.max(0, Math.round(remainingTime[lane] ?? 0));
+    const laneRemainingRaw = remainingTime[lane] ?? 0;
+    const isEvMode = laneRemainingRaw === -1;
+    const laneRemaining = isEvMode ? -1 : Math.max(0, Math.round(laneRemainingRaw));
 
     if (!groupEntry) {
-      return { color: "red", time: laneRemaining };
+      return { color: "red", time: laneRemaining, evMode: isEvMode };
     }
 
     const [groupName] = groupEntry;
 
     if (phase.includes("All_Red")) {
-      return { color: "red", time: laneRemaining };
+      return { color: "red", time: laneRemaining, evMode: isEvMode };
     }
 
     if (phase.includes(groupName) && phase.includes("Green")) {
-      return { color: "green", time: laneRemaining };
+      return { color: "green", time: laneRemaining, evMode: isEvMode };
     }
 
     if (phase.includes(groupName) && phase.includes("Yellow")) {
-      return { color: "yellow", time: laneRemaining };
+      return { color: "yellow", time: laneRemaining, evMode: isEvMode };
     }
 
-    return { color: "red", time: 0 };
+    return { color: "red", time: 0, evMode: false };
   };
 
   // Prepare chart data
@@ -345,6 +414,155 @@ export default function Index() {
             Smart Traffic Control System - AI-Powered Traffic Management Dashboard
           </motion.p>
         </motion.div>
+
+        {/* Emergency Vehicle Preemption Alert */}
+        <AnimatePresence>
+          {evpState.active && evpState.lane && (
+            <motion.div
+              initial={{ opacity: 0, y: -50, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -50, scale: 0.9 }}
+              transition={{ duration: 0.5, type: "spring" }}
+              className="mb-6"
+            >
+              <Card className="bg-gradient-to-r from-red-600 to-orange-600 border-0 shadow-2xl">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex items-center space-x-4">
+                      <motion.div
+                        animate={{ rotate: [0, 10, -10, 0] }}
+                        transition={{ duration: 0.5, repeat: Infinity }}
+                        className="text-5xl"
+                      >
+                        🚑
+                      </motion.div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-white mb-1">
+                          Emergency Vehicle Approaching
+                        </h3>
+                        <p className="text-white/90 text-lg">
+                          Emergency vehicle arriving from <span className="font-bold">{evpState.lane}</span> lane
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-6">
+                      <div className="text-center">
+                        <motion.div
+                          key={evpState.remaining_seconds}
+                          initial={{ scale: 1.2 }}
+                          animate={{ scale: 1 }}
+                          className="text-4xl font-bold text-white"
+                        >
+                          {Math.max(0, Math.round(evpState.remaining_seconds || 0))}s
+                        </motion.div>
+                        <p className="text-white/80 text-sm">ETA</p>
+                      </div>
+                      {evpState.remaining_seconds && evpState.remaining_seconds <= 10 && (
+                        <motion.div
+                          animate={{ opacity: [1, 0.5, 1] }}
+                          transition={{ duration: 0.5, repeat: Infinity }}
+                          className="px-4 py-2 bg-white/20 rounded-lg"
+                        >
+                          <p className="text-white font-semibold">⚠️ Priority Lane Active</p>
+                        </motion.div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* EV Alert Popup Modal */}
+        <AnimatePresence>
+          {evpState.active && evpState.lane && !evpPopupDismissed && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  // Click outside to close
+                  setEvpPopupDismissed(true);
+                }
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                transition={{ type: "spring", duration: 0.5 }}
+                className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Close Button - More Visible */}
+                <button
+                  onClick={() => setEvpPopupDismissed(true)}
+                  className="absolute top-4 right-4 z-10 bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-colors shadow-md"
+                  aria-label="Close"
+                  title="Close"
+                >
+                  <svg
+                    className="w-6 h-6 text-gray-700"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+                
+                <div className="text-center">
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 0.5, repeat: Infinity }}
+                    className="text-7xl mb-4"
+                  >
+                    🚑
+                  </motion.div>
+                  <h2 className="text-3xl font-bold text-red-600 mb-2">
+                    Emergency Vehicle Detected
+                  </h2>
+                  <p className="text-gray-700 text-lg mb-6">
+                    Emergency vehicle approaching from <span className="font-bold text-red-600">{evpState.lane}</span> lane
+                  </p>
+                  <div className="bg-red-50 rounded-lg p-4 mb-6">
+                    <p className="text-sm text-gray-600 mb-2">Estimated Time of Arrival</p>
+                    <motion.div
+                      key={evpState.remaining_seconds}
+                      initial={{ scale: 1.3 }}
+                      animate={{ scale: 1 }}
+                      className="text-5xl font-bold text-red-600"
+                    >
+                      {Math.max(0, Math.round(evpState.remaining_seconds || 0))}s
+                    </motion.div>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Traffic lights are being adjusted to prioritize the emergency vehicle.
+                    {evpState.remaining_seconds && evpState.remaining_seconds <= 10 && (
+                      <span className="block mt-2 font-semibold text-red-600">
+                        ⚠️ Priority lane is now active
+                      </span>
+                    )}
+                  </p>
+                  <button
+                    onClick={() => setEvpPopupDismissed(true)}
+                    className="mt-6 px-6 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 font-semibold transition-colors"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Live Vehicle Count Section */}
         <motion.div 
@@ -485,12 +703,54 @@ export default function Index() {
                         ></motion.div>
                       </div>
                       <motion.p 
-                        key={`${lane}-${status.time}-${status.color}-${data?.current_phase}`}
+                        key={`${lane}-${status.time}-${status.color}-${data?.current_phase}-${evpState.active}`}
                         initial={{ scale: 1.2 }}
                         animate={{ scale: 1 }}
-                        className="text-center text-gray-600 font-semibold"
+                        className={`text-center font-semibold ${
+                          status.evMode || (evpState.active && evpState.lane === lane) ? "text-red-600" : "text-gray-600"
+                        }`}
                       >
-                        {status.time > 0 ? `${Math.round(status.time)}s remaining` : status.color === "red" ? "0s" : `${Math.round(status.time)}s`}
+                        {(() => {
+                          // Check if backend sent -1 (EV keep-green mode)
+                          if (status.time === -1 || status.evMode) {
+                            return (
+                              <span className="flex items-center justify-center gap-1">
+                                🚑 --
+                              </span>
+                            );
+                          }
+                          
+                          // Check if this is the EV lane and EV is active
+                          const isEvLane = evpState.active && evpState.lane === lane;
+                          const evRemaining = evpState.remaining_seconds || 0;
+                          
+                          // If EV is active and this is EV lane, show EV countdown
+                          if (isEvLane && evRemaining > 0) {
+                            return (
+                              <span className="flex items-center justify-center gap-1">
+                                🚑 {Math.round(evRemaining)}s
+                              </span>
+                            );
+                          }
+                          
+                          // If EV is active and this is EV lane but countdown expired, show "--"
+                          if (isEvLane && evRemaining <= 0) {
+                            return (
+                              <span className="flex items-center justify-center gap-1">
+                                🚑 --
+                              </span>
+                            );
+                          }
+                          
+                          // Normal countdown display
+                          if (status.time > 0) {
+                            return `${Math.round(status.time)}s remaining`;
+                          } else if (status.color === "red") {
+                            return "0s";
+                          } else {
+                            return `${Math.round(status.time)}s`;
+                          }
+                        })()}
                       </motion.p>
                     </CardContent>
                   </Card>
@@ -598,6 +858,24 @@ export default function Index() {
                     <strong>Analysis:</strong> The {data?.active_group === "EastWest" ? "east/west" : "north/south"} lanes have {data?.active_group === "EastWest" ? eastGroupCount : northGroupCount} vehicles, requiring {data?.active_group === "EastWest" ? `${data?.signal_timings?.EastWest || 0}s` : `${data?.signal_timings?.NorthSouth || 0}s`} green time. The AI adjusts timing dynamically based on real-time traffic patterns, reducing congestion by {data?.efficiency_improvement?.toFixed(0) || 0}% compared to fixed-interval signals.
                   </p>
                 </motion.div>
+                {evpState.active && evpState.lane && (
+                  <motion.div 
+                    className="bg-red-50 border-2 border-red-300 p-4 rounded-lg mb-4"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.9 }}
+                  >
+                    <div className="flex items-center space-x-3 mb-2">
+                      <span className="text-2xl">🚑</span>
+                      <p className="text-red-800 font-semibold">
+                        <strong>Emergency Vehicle Preemption Active:</strong> Emergency vehicle from <strong>{evpState.lane}</strong> lane arriving in {Math.round(evpState.remaining_seconds || 0)}s. 
+                        {evpState.remaining_seconds && evpState.remaining_seconds <= 10 
+                          ? " Priority lane is now active - other lanes are being shortened." 
+                          : " Traffic light timings are being adjusted to prioritize the emergency vehicle."}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
                 <div className="grid grid-cols-3 gap-4">
                   {[
                     { label: "Priority Score", value: priorityScore, color: "green-600" },
